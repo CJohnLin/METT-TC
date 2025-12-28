@@ -1,4 +1,4 @@
-🧠 AI 輔助 MDMP 任務分析系統（METT-TC）
+#### 🧠 AI 輔助 MDMP 任務分析系統（METT-TC）
 
 AI-assisted, Human-in-the-loop Decision Support System for MDMP Mission Analysis
 
@@ -6,7 +6,7 @@ AI-assisted, Human-in-the-loop Decision Support System for MDMP Mission Analysis
 
 本系統以 決策輔助（Decision Support） 為核心定位，不進行自動化決策，符合軍事 AI 使用原則。
 
-📌 專案目標（Objectives）
+#### 📌 專案目標（Objectives）
 
 將傳統高度仰賴人工經驗的 METT-TC 任務分析流程結構化
 
@@ -16,7 +16,7 @@ AI-assisted, Human-in-the-loop Decision Support System for MDMP Mission Analysis
 
 建立一套 可展示、可驗證、可擴充 的 MDMP 決策輔助系統原型
 
-🧭 系統定位與設計原則
+#### 🧭 系統定位與設計原則
 系統定位
 
 適用於 MDMP Step 2：Mission Analysis
@@ -35,7 +35,7 @@ AI 非單點失效（具備規則式備援）
 
 不需任務資料集或模型預訓練
 
-🧩 系統架構概述
+#### 🧩 系統架構概述
 作戰情境文字輸入
         ↓
 Mission Analyzer（任務分析）
@@ -47,7 +47,7 @@ Human-in-the-loop 人工修正
         ↓
 結構化 METT-TC 輸出與視覺化比較
 
-🔍 功能模組說明
+#### 🔍 功能模組說明
 1️⃣ Mission Analysis（M）
 
 輸入：自然語言作戰情境
@@ -134,7 +134,7 @@ streamlit run streamlit_app.py
 
 http://localhost:8501
 
-📂 專案結構（簡化）
+#### 📂 專案結構（簡化）
 METT-TC/
 ├─ core/
 │  ├─ mission_analyzer.py
@@ -145,7 +145,7 @@ METT-TC/
 ├─ requirements.txt
 └─ README.md
 
-📚 研究與應用價值
+#### 📚 研究與應用價值
 
 ✔ AI 輔助 MDMP 任務分析之可行性驗證
 
@@ -161,7 +161,7 @@ METT-TC/
 
 軍事決策輔助展示
 
-🔮 未來擴充方向（Future Work）
+#### 🔮 未來擴充方向（Future Work）
 
 Terrain / OCOKA 分析模組
 
@@ -173,12 +173,12 @@ COA Comparison Matrix（支援 MDMP Step 3/4）
 
 決策歷程紀錄與匯出（實驗用）
 
-⚠️ 免責聲明（Disclaimer）
+#### ⚠️ 免責聲明（Disclaimer）
 
 本專案為 研究與教學用途之系統原型，
 不構成任何實際軍事指揮或作戰建議。
 
-👤 作者
+#### 👤 作者
 
 林佳宏（Chiahung “John” Lin）
 AI-assisted Military Decision Support Research
