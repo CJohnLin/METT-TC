@@ -1,87 +1,177 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
 
 from core.mission_analyzer import analyze_mission
 from core.enemy_analyzer import analyze_enemy
 
+# ===============================
+# Page Config
+# ===============================
 st.set_page_config(
-    page_title="MDMP / METT-TC AI 參謀輔助系統",
+    page_title="MDMP / METT-TC AI Decision Support",
     layout="wide"
 )
 
-# === 標題 ===
-st.title("MDMP 第二步驟：任務分析（METT-TC）")
-st.markdown("**AI 輔助決策系統（具備規則式備援機制）**")
+# ===============================
+# Title
+# ===============================
+st.title("MDMP Mission Analysis (METT-TC)")
+st.markdown("**AI-assisted, Human-in-the-loop Decision Support System**")
 
-# === 輸入區 ===
-st.subheader("作戰情境輸入（Operational Scenario）")
+# ===============================
+# Scenario Input
+# ===============================
+st.subheader("Operational Scenario Input")
 
 scenario = st.text_area(
-    "請輸入作戰情境、任務背景或敵情概述：",
+    "Enter operational situation / mission context:",
     height=220,
-    value="""我方部隊奉命對目標 ALPHA 發起攻勢，
-以奪控關鍵地形並阻止敵軍使用。
+    value="""Friendly forces will conduct offensive operations to seize Objective ALPHA
+in order to deny enemy use of key terrain.
 
-敵軍為一個機械化步兵營，
-目前於責任地區內採取防禦部署，
-並具有限度砲兵支援能力。
+Enemy forces consist of a mechanized infantry battalion defending in sector
+with limited artillery support.
 
-作戰區域內仍有平民活動，
-交戰規則要求避免造成平民傷亡。"""
+Civilian population remains in the area."""
 )
 
-if st.button("執行 METT-TC 分析"):
-    # === 分析 ===
-    mission = analyze_mission(scenario)
-    enemy = analyze_enemy(scenario)
+# ===============================
+# Run Analysis (ONE-TIME trigger)
+# ===============================
+if st.button("Run METT-TC Analysis"):
+    # Run analysis once
+    st.session_state.mission = analyze_mission(scenario)
+    st.session_state.enemy = analyze_enemy(scenario)
+
+    # Freeze AI baseline probabilities
+    st.session_state.ai_baseline = {
+        "Defensive": st.session_state.enemy.all_coas["defensive"].probability,
+        "Counterattack": st.session_state.enemy.all_coas["counterattack"].probability,
+        "Withdrawal": st.session_state.enemy.all_coas["withdrawal"].probability,
+    }
+
+    # Initialize human sliders (only once per analysis)
+    st.session_state.human_defensive = st.session_state.ai_baseline["Defensive"]
+    st.session_state.human_counterattack = st.session_state.ai_baseline["Counterattack"]
+    st.session_state.human_withdrawal = st.session_state.ai_baseline["Withdrawal"]
+
+# ===============================
+# Display Results
+# ===============================
+if "mission" in st.session_state and "enemy" in st.session_state:
+
+    mission = st.session_state.mission
+    enemy = st.session_state.enemy
+    ai_baseline = st.session_state.ai_baseline
 
     col1, col2 = st.columns(2)
 
-    # ===== 任務分析（M）=====
+    # ===========================
+    # Mission Analysis (M)
+    # ===========================
     with col1:
-        st.subheader("任務分析（Mission）")
+        st.subheader("Mission Analysis (M)")
 
-        st.markdown("**特定行動（Specified Tasks）**")
+        st.markdown("**Specified Tasks**")
         st.write(mission.specified_tasks)
 
-        st.markdown("**推斷行動（Implied Tasks）**")
+        st.markdown("**Implied Tasks**")
         st.write(mission.implied_tasks)
 
-        st.markdown("**限制（Constraints）**")
+        st.markdown("**Constraints**")
         st.write(mission.constraints)
 
-        st.markdown("**關鍵行動（Essential Tasks）**")
+        st.markdown("**Essential Task**")
         st.success(mission.essential_task)
-    # ===== 敵情評估（E）=====
+
+    # ===========================
+    # Enemy COA + Human-in-the-loop
+    # ===========================
     with col2:
-        st.subheader("敵情行動方案評估（Enemy COA）")
+        st.subheader("Enemy COA Assessment (E)")
 
-        if enemy is None:
-            st.error("敵情分析未產生結果，請確認 Enemy Analyzer。")
+        # ---- AI Baseline ----
+        st.markdown("### AI Baseline Assessment")
+        st.write(f"**Most Likely COA (AI):** {max(ai_baseline, key=ai_baseline.get)}")
+        st.write("**Most Dangerous COA (AI):** Counterattack (doctrine-based)")
+
+        st.markdown("---")
+
+        # ---- Human-in-the-loop ----
+        st.markdown("### Human-in-the-loop Adjustment")
+
+        st.slider(
+            "Defensive",
+            0.0, 1.0, step=0.05,
+            key="human_defensive"
+        )
+
+        st.slider(
+            "Counterattack",
+            0.0, 1.0, step=0.05,
+            key="human_counterattack"
+        )
+
+        st.slider(
+            "Withdrawal",
+            0.0, 1.0, step=0.05,
+            key="human_withdrawal"
+        )
+
+        total = (
+            st.session_state.human_defensive
+            + st.session_state.human_counterattack
+            + st.session_state.human_withdrawal
+        )
+
+        if total == 0:
+            st.error("Total probability must be greater than 0.")
         else:
-            st.markdown("**最可能行動方案（Most Likely COA）**")
-            st.write(enemy.most_likely.description)
-            st.write(f"發生機率：{enemy.most_likely.probability}")
+            # Normalized human-adjusted probabilities
+            human_probs = {
+                "Defensive": st.session_state.human_defensive / total,
+                "Counterattack": st.session_state.human_counterattack / total,
+                "Withdrawal": st.session_state.human_withdrawal / total,
+            }
 
-            st.markdown("**最危險行動方案（Most Dangerous COA）**")
-            st.write(enemy.most_dangerous.description)
-            st.write(f"發生機率：{enemy.most_dangerous.probability}")
+            st.markdown("### Human-adjusted Assessment")
+            st.success(
+                f"**Most Likely COA (Human):** {max(human_probs, key=human_probs.get)}"
+            )
+            st.warning(
+                "**Most Dangerous COA (Human):** Counterattack (doctrine-based)"
+            )
 
-            st.markdown("### 敵軍行動方案機率分布")
+            # ===============================
+            # AI vs Human Probability Comparison
+            # ===============================
+            st.markdown("### AI vs Human-adjusted Probability Comparison")
 
-            labels = []
-            values = []
+            labels = ["Defensive", "Counterattack", "Withdrawal"]
+            ai_values = [ai_baseline[k] for k in labels]
+            human_values = [human_probs[k] for k in labels]
 
-            for key, coa in enemy.all_coas.items():
-                labels.append(key)
-                values.append(coa.probability)
+            x = np.arange(len(labels))
+            width = 0.35
 
-            if len(labels) == 0:
-                st.warning("未產生任何 COA 機率資料")
-            else:
-                fig, ax = plt.subplots()
-                ax.bar(labels, values)
-                ax.set_ylabel("機率")
-                ax.set_ylim(0, 1)
-                st.pyplot(fig)
+            fig, ax = plt.subplots()
 
+            ax.bar(x - width / 2, ai_values, width, label="AI Baseline")
+            ax.bar(x + width / 2, human_values, width, label="Human-adjusted")
+
+            ax.set_ylabel("Probability")
+            ax.set_ylim(0, 1)
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels)
+            ax.legend()
+
+            st.pyplot(fig)
+
+# ===============================
+# Footer
+# ===============================
+st.markdown("---")
+st.caption(
+    "Human-in-the-loop decision support | AI-assisted MDMP | Non-automated command authority"
+)
