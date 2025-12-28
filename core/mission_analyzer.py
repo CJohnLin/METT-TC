@@ -1,6 +1,5 @@
 import json
 import os
-from dotenv import load_dotenv
 
 try:
     from openai import OpenAI
@@ -10,7 +9,6 @@ except ImportError:
 
 from core.schema import MissionAnalysis
 
-load_dotenv()
 
 def analyze_mission(text: str) -> MissionAnalysis:
     """
